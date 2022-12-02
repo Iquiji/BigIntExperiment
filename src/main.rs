@@ -114,6 +114,7 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
     pub const ZERO: Self = BigInt::new();
     pub const ONE: Self = BigInt::from_u8(1);
     pub const TWO: Self = BigInt::from_u8(2);
+    pub const TWO_FIVE_SIX: Self = BigInt::two_five_six();
 
     pub const fn new() -> Self {
         BigInt { data: [0; SIZE] }
@@ -148,6 +149,24 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
             data[SIZE - idx - 1] = parsed;
         }
         BigInt { data }
+    }
+
+    fn split<const HALF: usize>(&self) -> (BigInt<HALF>, BigInt<HALF>) {
+        assert_eq!(HALF, SIZE / 2);
+        let mut high = BigInt::<HALF> { data: [0; HALF] };
+        let mut low = BigInt::<HALF> { data: [0; HALF] };
+        for idx in 0..HALF {
+            low.data[idx] = self.data[idx];
+            high.data[idx] = self.data[idx + HALF];
+        }
+        (high, low)
+    }
+
+    const fn two_five_six() -> BigInt<SIZE> {
+        assert!(SIZE > 1);
+        let mut result = BigInt::ZERO;
+        result.data[1] = 1;
+        result
     }
 }
 
@@ -233,29 +252,55 @@ impl<const SIZE: usize> Mul for &BigInt<{ SIZE }> {
     type Output = BigInt<SIZE>;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        let mut output = BigInt::ZERO;
-        for idx in 0..SIZE {
-            for bit_idx in 0..8 {
-                // println!("bit: {}", idx * 8 + bit_idx);
-                // if bit is set
-                if (self.data[idx] & (1 << bit_idx)) != 0 {
-                    let shift_amount = idx * 8 + bit_idx;
-                    // println!("shift_amount : {}",shift_amount);
-                    output += &rhs.shl(shift_amount);
-                }
+        if cfg!(feature = "karatsuba") {
+            karatsuba(self, rhs)
+        } else {
+            schoolbook(self, rhs)
+        }
+    }
+}
+
+pub fn schoolbook<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>) -> BigInt<SIZE> {
+    let mut output = BigInt::ZERO;
+    for idx in 0..SIZE {
+        for bit_idx in 0..8 {
+            // println!("bit: {}", idx * 8 + bit_idx);
+            // if bit is set
+            if (a.data[idx] & (1 << bit_idx)) != 0 {
+                let shift_amount = idx * 8 + bit_idx;
+                // println!("shift_amount : {}",shift_amount);
+                output += &b.shl(shift_amount);
             }
         }
-        // println!("sum_elements: {:#?}", sum_elements);
-
-        // let mut output = BigInt::<SIZE>::new();
-        // for element in sum_elements {
-        //     output = output + element;
-        //     // println!("added : {:?}", element);
-        //     // println!("output: {:?}", output);
-        // }
-        // println!("mul");
-        output
     }
+    // println!("sum_elements: {:#?}", sum_elements);
+
+    // let mut output = BigInt::<SIZE>::new();
+    // for element in sum_elements {
+    //     output = output + element;
+    //     // println!("added : {:?}", element);
+    //     // println!("output: {:?}", output);
+    // }
+    // println!("mul");
+    output
+}
+
+pub fn karatsuba<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>) -> BigInt<SIZE> {
+    if a <= &BigInt::from(255) || b <= &BigInt::from(255) {
+        return schoolbook(a, b);
+    }
+
+    let split_point = SIZE / 2;
+    let (high1, low1) = a.split();
+    let (high2, low2) = b.split();
+
+    let z0 = karatsuba(&low1, &low2);
+    let z1 = karatsuba(&(&low1 + &high1), &(&low2 + &high2));
+    let z2 = karatsuba(&high1, &high2);
+
+    &(&(&z2 * &BigInt::TWO_FIVE_SIX.shl(split_point * 2 * 8))
+        + &(&(&(&z1 - &z2) - &z0) * &BigInt::TWO_FIVE_SIX.shl(split_point * 8)))
+        + &z0
 }
 
 impl<const SIZE: usize> Div for BigInt<{ SIZE }> {
