@@ -7,11 +7,31 @@ use std::fmt::Write;
 
 fn main() {
     println!("Hello, world!");
-    const SIZE: usize = 2048 / 8;   
-    let string = "bad47a84c1782e4dbdd913f2a261fc8b65838412c6e45a2068ed6d7f16e9cdf4462b39119563cafb74b9cbf25cfd544bdae23bff0ebe7f6441042b7e109b9a8afaa056821ef8efaab219d21d6763484785622d918d395a2a31f2ece8385a8131e5ff143314a82e21afd713bae817cc0ee3514d4839007ccb55d68409c97a18ab62fa6f9f89b3f94a2777c47d6136775a56a9a0127f682470bef831fbec4bcd7b5095a7823fd70745d37d1bf72b63c4b1b4a3d0581e74bf9ade93cc46148617553931a79d92e9e488ef47223ee6f6c061884b13c9065b591139de13c1ea2927491ed00fb793cd68f463f5f64baa53916b46c818ab99706557a1c2d50d232577d1";
-    let bignum = BigInt::<SIZE>::from_hex_string(string);
-    let outstring = bignum.to_hex_string();
-    assert_eq!(string, outstring.to_lowercase());
+    
+    // RSA
+    const SIZE: usize = (4096) / 8;
+    let rsa_n_str = "bad47a84c1782e4dbdd913f2a261fc8b65838412c6e45a2068ed6d7f16e9cdf4462b39119563cafb74b9cbf25cfd544bdae23bff0ebe7f6441042b7e109b9a8afaa056821ef8efaab219d21d6763484785622d918d395a2a31f2ece8385a8131e5ff143314a82e21afd713bae817cc0ee3514d4839007ccb55d68409c97a18ab62fa6f9f89b3f94a2777c47d6136775a56a9a0127f682470bef831fbec4bcd7b5095a7823fd70745d37d1bf72b63c4b1b4a3d0581e74bf9ade93cc46148617553931a79d92e9e488ef47223ee6f6c061884b13c9065b591139de13c1ea2927491ed00fb793cd68f463f5f64baa53916b46c818ab99706557a1c2d50d232577d1";
+    let rsa_n = BigInt::<SIZE>::from_hex_string(rsa_n_str);
+    println!("rsa_n: {:?}",rsa_n);
+    let outstring = rsa_n.to_hex_string();
+    // assert_eq!(rsa_n_str, outstring.to_lowercase());
+
+    let rsa_d_str = "40d60f24b61d76783d3bb1dc00b55f96a2a686f59b3750fdb15c40251c370c65cada222673811bc6b305ed7c90ffcb3abdddc8336612ff13b42a75cb7c88fb936291b523d80acce5a0842c724ed85a1393faf3d470bda8083fa84dc5f31499844f0c7c1e93fb1f734a5a29fb31a35c8a0822455f1c850a49e8629714ec6a2657efe75ec1ca6e62f9a3756c9b20b4855bdc9a3ab58c43d8af85b837a7fd15aa1149c119cfe960c05a9d4cea69c9fb6a897145674882bf57241d77c054dc4c94e8349d376296137eb421686159cb878d15d171eda8692834afc871988f203fc822c5dcee7f6c48df663ea3dc755e7dc06aebd41d05f1ca2891e2679783244d068f";
+    let rsa_d = BigInt::<SIZE>::from_hex_string(rsa_d_str);
+    let outstring = rsa_d.to_hex_string();
+    // assert_eq!(rsa_d_str, outstring.to_lowercase());
+
+    let rsa_e_str = "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010001";
+    let rsa_e = BigInt::<SIZE>::from_hex_string(rsa_e_str);
+    let outstring = rsa_e.to_hex_string();
+    // assert_eq!(rsa_e_str, outstring.to_lowercase());
+
+    let message = BigInt::<SIZE>::from_u8(42);
+    let mod_pow = message.mod_pow(rsa_d * rsa_e, rsa_n);
+    assert_eq!(message, mod_pow);
+
+
+
     let number = BigInt::<4>::from_hex_string("01FEFE01");
     assert_eq!(number.to_hex_string(),"01FEFE01");
     let number1 = BigInt::<4>::from_hex_string("00_00_FF_FF");
@@ -49,6 +69,8 @@ fn main() {
     // println!("Debug: {:?}", number3);
 }
 
+const ELEMENT_BIT_SIZE: usize = 8;
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 struct BigInt<const SIZE: usize> {
     data: [u8; SIZE],
@@ -76,14 +98,15 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
         for idx in (0..SIZE).rev() {
             let hex_4 = str_iter
                 .clone()
-                .skip(SIZE * 2 - 2 * idx - 2)
+                .chain(vec!['0'].iter().cloned().cycle())
+                .skip((SIZE - idx) * 2 - 2)
                 .take(2)
                 .collect::<String>();
             // println!("hex_4: {hex_4}");
             let parsed =
                 u8::from_str_radix(&hex_4, 16).expect("Error Parsing Hex String into BigInt");
 
-            data[idx] = parsed;
+            data[SIZE - idx - 1] = parsed;
         }
         BigInt { data }
     }
@@ -118,6 +141,9 @@ impl<const SIZE: usize> Add for BigInt<{ SIZE }> {
         }
 
         // eprintln!("carry at end of add: {}", carry_flag);
+        if carry_flag{
+            println!("overflow in add!");
+        }
 
         output
     }
@@ -162,7 +188,7 @@ impl<const SIZE: usize> Mul for BigInt<{ SIZE }> {
     type Output = BigInt<SIZE>;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        let mut sum_elements: Vec<BigInt<SIZE>> = vec![];
+        let mut output = BigInt::<SIZE>::new();
         for idx in 0..SIZE {
             for bit_idx in 0..8 {
                 // println!("bit: {}", idx * 8 + bit_idx);
@@ -170,19 +196,19 @@ impl<const SIZE: usize> Mul for BigInt<{ SIZE }> {
                 if (self.data[idx] & (1 << bit_idx)) != 0 {
                     let shift_amount = idx * 8 + bit_idx;
                     // println!("shift_amount : {}",shift_amount);
-                    sum_elements.push(rhs.shl(shift_amount));
+                    output = output + rhs.shl(shift_amount);
                 }
             }
         }
         // println!("sum_elements: {:#?}", sum_elements);
 
-        let mut output = BigInt::new();
-        for element in sum_elements {
-            output = output + element;
-            // println!("added : {:?}", element);
-            // println!("output: {:?}", output);
-        }
-
+        // let mut output = BigInt::<SIZE>::new();
+        // for element in sum_elements {
+        //     output = output + element;
+        //     // println!("added : {:?}", element);
+        //     // println!("output: {:?}", output);
+        // }
+        // println!("mul");
         output
     }
 }
@@ -373,12 +399,19 @@ impl<const SIZE: usize> BigInt<{ SIZE }>{
         if modulus == BigInt::from_u8(1) { return 0.into() }
         let mut result: BigInt<SIZE> = 1.into();
         let mut base = self % modulus;
+        let mut timer = std::time::Instant::now();
+        let mut iter = 0;
         while exp > BigInt::from_u8(0) {
-            if exp % BigInt::from_u8(2) == 1.into() {
-                result = result * base % modulus;
+            println!("Took: {:?} for {}",timer.elapsed(),iter);
+            timer = std::time::Instant::now();
+            iter += 1;
+            // println!("exp: {:?}",exp);
+            // println!("res: {:?}",result);
+            if (exp.data[0] & 1) == 1 {
+                result = (result * base) % modulus;
             }
-            exp = exp.shr(1);
-            base = base * base % modulus;
+            base = (base * base) % modulus;
+            exp = exp.shr_once();
         }
         result
     }
