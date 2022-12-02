@@ -1,3 +1,4 @@
+use const_fn_assert::{cfn_assert, cfn_assert_eq};
 use rand;
 use std::fmt::Debug;
 use std::fmt::Write;
@@ -152,7 +153,7 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
     }
 
     fn split<const HALF: usize>(&self) -> (BigInt<HALF>, BigInt<HALF>) {
-        assert_eq!(HALF, SIZE / 2);
+        cfn_assert_eq!(HALF, SIZE / 2);
         let mut high = BigInt::<HALF> { data: [0; HALF] };
         let mut low = BigInt::<HALF> { data: [0; HALF] };
         for idx in 0..HALF {
@@ -163,12 +164,15 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
     }
 
     const fn two_five_six() -> BigInt<SIZE> {
-        assert!(SIZE > 1);
+        cfn_assert!(SIZE > 1);
         let mut result = BigInt::ZERO;
         result.data[1] = 1;
         result
     }
 }
+
+// uncomment to break the build :D
+// const _: BigInt<1> = BigInt::<1>::two_five_six();
 
 impl<const SIZE: usize> AddAssign<&Self> for BigInt<{ SIZE }> {
     fn add_assign(&mut self, rhs: &Self) {
