@@ -344,6 +344,47 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
     }
 }
 
+impl<const SIZE: usize> From<u8> for BigInt<{ SIZE }>{
+    fn from(num: u8) -> Self {
+        Self::from_u8(num)
+    }
+}   
+/*
+https://rob.co.bb/posts/2019-02-10-modular-exponentiation-in-rust/
+
+fn mod_pow(mut base: u64, mut exp: u64, modulus: u64) -> u64 {
+    if modulus == 1 { return 0 }
+    let mut result = 1;
+    base = base % modulus;
+    while exp > 0 {
+        if exp % 2 == 1 {
+            result = result * base % modulus;
+        }
+        exp = exp >> 1;
+        base = base * base % modulus
+    }
+    result
+}
+
+*/
+impl<const SIZE: usize> BigInt<{ SIZE }>{
+    fn mod_pow(self, exp: Self, modulus: Self) -> Self{
+        let mut exp = exp;
+        if modulus == BigInt::from_u8(1) { return 0.into() }
+        let mut result: BigInt<SIZE> = 1.into();
+        let mut base = self % modulus;
+        while exp > BigInt::from_u8(0) {
+            if exp % BigInt::from_u8(2) == 1.into() {
+                result = result * base % modulus;
+            }
+            exp = exp.shr(1);
+            base = base * base % modulus;
+        }
+        result
+    }
+
+}
+
 impl<const SIZE: usize> BigInt<{ SIZE }>{
     fn to_hex_string(self) -> String{
         let mut res = String::new();
