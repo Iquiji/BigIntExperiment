@@ -106,26 +106,26 @@ fn main() {
 // const ELEMENT_BIT_SIZE: usize = 8;
 
 #[derive(Clone, PartialEq, Eq)]
-struct BigInt<const SIZE: usize> {
+pub struct BigInt<const SIZE: usize> {
     data: [u8; SIZE],
 }
 
 impl<const SIZE: usize> BigInt<{ SIZE }> {
-    const ZERO: Self = BigInt::new();
-    const ONE: Self = BigInt::from_u8(1);
-    const TWO: Self = BigInt::from_u8(2);
+    pub const ZERO: Self = BigInt::new();
+    pub const ONE: Self = BigInt::from_u8(1);
+    pub const TWO: Self = BigInt::from_u8(2);
 
-    const fn new() -> Self {
+    pub const fn new() -> Self {
         BigInt { data: [0; SIZE] }
     }
 
-    const fn from_u8(num: u8) -> Self {
+    pub const fn from_u8(num: u8) -> Self {
         let mut int = Self::new();
         int.data[0] = num;
         int
     }
 
-    fn from_hex_string(string: &str) -> Self {
+    pub fn from_hex_string(string: &str) -> Self {
         // println!("parse...");
         let mut data = [0; SIZE];
         let str_filtered = string
@@ -366,7 +366,7 @@ impl<const SIZE: usize> PartialOrd for BigInt<{ SIZE }> {
 }
 
 impl<const SIZE: usize> BigInt<{ SIZE }> {
-    fn shl_once(self) -> Self {
+    pub fn shl_once(self) -> Self {
         let mut output = [0; SIZE];
         let mut carry = false;
         for idx in 0..SIZE {
@@ -382,7 +382,7 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
         BigInt { data: output }
     }
 
-    fn shl(&self, amount: usize) -> Self {
+    pub fn shl(&self, amount: usize) -> Self {
         let mut output = self.clone();
         for _ in 0..amount {
             output = output.shl_once();
@@ -390,7 +390,7 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
         output
     }
 
-    fn shr_once(self) -> Self {
+    pub fn shr_once(self) -> Self {
         let mut output = [0; SIZE];
         let mut carry = false;
         for idx in (0..SIZE).rev() {
@@ -406,7 +406,7 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
         BigInt { data: output }
     }
 
-    fn shr(self, amount: usize) -> Self {
+    pub fn shr(self, amount: usize) -> Self {
         let mut output = self;
         for _ in 0..amount {
             output = output.shr_once();
