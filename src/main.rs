@@ -1,14 +1,21 @@
 use rand;
 use std::cmp::Ordering;
 use std::fmt::Debug;
-use std::ops::{AddAssign, Mul, Shl, Sub};
+use std::ops::{AddAssign, Mul, Shl, Sub, Div, Rem};
 use std::{fmt::Display, ops::Add};
+use std::fmt::Write;
 
 fn main() {
     println!("Hello, world!");
+    const SIZE: usize = 2048 / 8;
+    let string = "bad47a84c1782e4dbdd913f2a261fc8b65838412c6e45a2068ed6d7f16e9cdf4462b39119563cafb74b9cbf25cfd544bdae23bff0ebe7f6441042b7e109b9a8afaa056821ef8efaab219d21d6763484785622d918d395a2a31f2ece8385a8131e5ff143314a82e21afd713bae817cc0ee3514d4839007ccb55d68409c97a18ab62fa6f9f89b3f94a2777c47d6136775a56a9a0127f682470bef831fbec4bcd7b5095a7823fd70745d37d1bf72b63c4b1b4a3d0581e74bf9ade93cc46148617553931a79d92e9e488ef47223ee6f6c061884b13c9065b591139de13c1ea2927491ed00fb793cd68f463f5f64baa53916b46c818ab99706557a1c2d50d232577d1";
+    let bignum = BigInt::<SIZE>::from_hex_string(string);
+    let outstring = bignum.to_hex_string();
+    assert_eq!(string, outstring.to_lowercase());
     let number = BigInt::<4>::from_hex_string("01FEFE01");
+    assert_eq!(number.to_hex_string(),"01FEFE01");
     let number1 = BigInt::<4>::from_hex_string("00_00_FF_FF");
-    let number2 = BigInt::<4>::from_hex_string("00_00_01_FF");
+    let number2 = BigInt::<4>::from_hex_string("00_00_00_FF");
     println!("Mul 1: {:?}", number1);
     println!("Mul 2: {:?}", number2);
     // println!("Debug: {:?}", number2.shl(15));
@@ -20,7 +27,7 @@ fn main() {
 
     // println!("Manual: {:?}", accum);
 
-    println!("Debug: {:?}", number1 * number2);
+    println!("Debug: {:?}", number1 / number2);
     // println!("Debug: {:?}", number2);
     // println!("Debug: {:?}", number2.shl(0));
 
@@ -180,6 +187,64 @@ impl<const SIZE: usize> Mul for BigInt<{ SIZE }> {
     }
 }
 
+impl<const SIZE: usize> Div for BigInt<{ SIZE }>{
+    type Output = BigInt<SIZE>;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        if rhs == BigInt::from_u8(0){
+            panic!("Divide by Zero!");
+        }
+        let mut quotient = BigInt::new();
+        let mut remainder = BigInt::new();
+
+        for idx in (0..SIZE).rev() {
+            for bit_idx in (0..8).rev() {
+                remainder = remainder.shl_once();
+                remainder.data[0] |= (self.data[idx] & (1 << bit_idx)) >> bit_idx;
+                // let bit_at = idx * 8 + bit_idx;
+                // println!("bit: {}", idx * 8 + bit_idx);
+                // if bit is set
+                if remainder >= rhs  {
+                    remainder = remainder - rhs;
+                    quotient.data[idx]  |= 1 << bit_idx;
+                    // println!("shift_amount : {}",shift_amount);
+                    // sum_elements.push(rhs.shl(shift_amount));
+                }
+            }
+        }
+        quotient
+    }
+}
+
+impl<const SIZE: usize> Rem for BigInt<{ SIZE }>{
+    type Output = BigInt<SIZE>;
+
+    fn rem(self, rhs: Self) -> Self::Output {
+        if rhs == BigInt::from_u8(0){
+            panic!("Modulo by Zero!");
+        }
+        let mut quotient: BigInt<SIZE> = BigInt::new();
+        let mut remainder: BigInt<SIZE> = BigInt::new();
+
+        for idx in (0..SIZE).rev() {
+            for bit_idx in (0..8).rev() {
+                remainder = remainder.shl_once();
+                remainder.data[0] |= (self.data[idx] & (1 << bit_idx)) >> bit_idx;
+                // let bit_at = idx * 8 + bit_idx;
+                // println!("bit: {}", idx * 8 + bit_idx);
+                // if bit is set
+                if remainder >= rhs  {
+                    remainder = remainder - rhs;
+                    quotient.data[idx]  |= 1 << bit_idx;
+                    // println!("shift_amount : {}",shift_amount);
+                    // sum_elements.push(rhs.shl(shift_amount));
+                }
+            }
+        }
+        remainder
+    }
+}
+
 impl<const SIZE: usize> Ord for BigInt<{ SIZE }> {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
         for idx in (0..SIZE).rev() {
@@ -276,6 +341,21 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
             output = output.shr_once();
         }
         output
+    }
+}
+
+impl<const SIZE: usize> BigInt<{ SIZE }>{
+    fn to_hex_string(self) -> String{
+        let mut res = String::new();
+        for idx in (0..SIZE).rev(){
+            write!(res,"{:02X?}",self.data[idx]).unwrap();
+            // println!("{}",res);
+        }
+        res
+    }
+
+    fn to_string_decimal(&self){
+
     }
 }
 
@@ -437,15 +517,102 @@ mod test {
             let should_be = BigInt { data: should_be };
             println!("should_be : {:?}", should_be);
 
-            let diff = should_be - number1 * number2;
-            println!("diff : {:?}", diff);
-            for shift_amount in 0..64 {
-                if number2.shl(shift_amount) == diff {
-                    println!("Eureka!");
-                }
-            }
+            // let diff = should_be - number1 * number2;
+            // println!("diff : {:?}", diff);
+            // for shift_amount in 0..64 {
+            //     if number2.shl(shift_amount) == diff {
+            //         println!("Eureka!");
+            //     }
+            // }
 
             assert_eq!(res_u32, case.0 * case.1);
+        }
+    }
+    #[test]
+    fn test_64bit_div_fuzzed() {
+        use crate::rand;
+        use crate::BigInt;
+
+        for _ in 0..1000 {
+            let case = (rand::random::<u64>(), rand::random::<u64>() / 3);
+            let mut number1_bytes = case.0.to_be_bytes();
+            number1_bytes.reverse();
+            let number1 = BigInt {
+                data: number1_bytes,
+            };
+            println!("number1 : {:?}", number1);
+
+            let mut number2_bytes = case.1.to_be_bytes();
+            number2_bytes.reverse();
+            let number2 = BigInt {
+                data: number2_bytes,
+            };
+            println!("number2 : {:?}", number2);
+
+            let mut res = number1 / number2;
+            println!("res       : {:?}", res);
+            // this is because u32 spit want bytes weird
+            res.data.reverse();
+            let res_u32 = u64::from_be_bytes(res.data);
+
+            let mut should_be = (case.0 / case.1).to_be_bytes();
+            should_be.reverse();
+            let should_be = BigInt { data: should_be };
+            println!("should_be : {:?}", should_be);
+
+            // let diff = should_be - number1 * number2;
+            // println!("diff : {:?}", diff);
+            // for shift_amount in 0..64 {
+            //     if number2.shl(shift_amount) == diff {
+            //         println!("Eureka!");
+            //     }
+            // }
+
+            assert_eq!(res_u32, case.0 / case.1);
+        }
+    }
+
+    #[test]
+    fn test_64bit_mod_fuzzed() {
+        use crate::rand;
+        use crate::BigInt;
+
+        for _ in 0..1000 {
+            let case = (rand::random::<u64>(), rand::random::<u64>() / 3);
+            let mut number1_bytes = case.0.to_be_bytes();
+            number1_bytes.reverse();
+            let number1 = BigInt {
+                data: number1_bytes,
+            };
+            println!("number1 : {:?}", number1);
+
+            let mut number2_bytes = case.1.to_be_bytes();
+            number2_bytes.reverse();
+            let number2 = BigInt {
+                data: number2_bytes,
+            };
+            println!("number2 : {:?}", number2);
+
+            let mut res = number1 % number2;
+            println!("res       : {:?}", res);
+            // this is because u32 spit want bytes weird
+            res.data.reverse();
+            let res_u32 = u64::from_be_bytes(res.data);
+
+            let mut should_be = (case.0 % case.1).to_be_bytes();
+            should_be.reverse();
+            let should_be = BigInt { data: should_be };
+            println!("should_be : {:?}", should_be);
+
+            // let diff = should_be - number1 * number2;
+            // println!("diff : {:?}", diff);
+            // for shift_amount in 0..64 {
+            //     if number2.shl(shift_amount) == diff {
+            //         println!("Eureka!");
+            //     }
+            // }
+
+            assert_eq!(res_u32, case.0 % case.1);
         }
     }
 }
