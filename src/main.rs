@@ -109,12 +109,17 @@ fn main() {
 struct BigInt<const SIZE: usize> {
     data: [u8; SIZE],
 }
+
 impl<const SIZE: usize> BigInt<{ SIZE }> {
-    fn new() -> Self {
+    const ZERO: Self = BigInt::new();
+    const ONE: Self = BigInt::from_u8(1);
+    const TWO: Self = BigInt::from_u8(2);
+
+    const fn new() -> Self {
         BigInt { data: [0; SIZE] }
     }
 
-    fn from_u8(num: u8) -> Self {
+    const fn from_u8(num: u8) -> Self {
         let mut int = Self::new();
         int.data[0] = num;
         int
@@ -228,7 +233,7 @@ impl<const SIZE: usize> Mul for &BigInt<{ SIZE }> {
     type Output = BigInt<SIZE>;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        let mut output = BigInt::<SIZE>::new();
+        let mut output = BigInt::ZERO;
         for idx in 0..SIZE {
             for bit_idx in 0..8 {
                 // println!("bit: {}", idx * 8 + bit_idx);
@@ -257,7 +262,7 @@ impl<const SIZE: usize> Div for BigInt<{ SIZE }> {
     type Output = BigInt<SIZE>;
 
     fn div(self, rhs: Self) -> Self::Output {
-        if rhs == BigInt::from_u8(0) {
+        if rhs == BigInt::ZERO {
             panic!("Divide by Zero!");
         }
         let mut quotient = BigInt::new();
@@ -286,7 +291,7 @@ impl<const SIZE: usize> Rem for &BigInt<{ SIZE }> {
     type Output = BigInt<SIZE>;
 
     fn rem(self, rhs: Self) -> Self::Output {
-        if *rhs == BigInt::from_u8(0) {
+        if *rhs == BigInt::ZERO {
             panic!("Modulo by Zero!");
         }
         let mut quotient: BigInt<SIZE> = BigInt::new();
@@ -300,7 +305,7 @@ impl<const SIZE: usize> Rem for &BigInt<{ SIZE }> {
                 // println!("bit: {}", idx * 8 + bit_idx);
                 // if bit is set
                 if remainder >= *rhs {
-                    remainder -= &rhs;
+                    remainder -= rhs;
                     quotient.data[idx] |= 1 << bit_idx;
                     // println!("shift_amount : {}",shift_amount);
                     // sum_elements.push(rhs.shl(shift_amount));
@@ -436,14 +441,14 @@ fn mod_pow(mut base: u64, mut exp: u64, modulus: u64) -> u64 {
 impl<const SIZE: usize> BigInt<{ SIZE }> {
     fn mod_pow(self, exp: &Self, modulus: &Self) -> Self {
         let mut exp = exp.clone();
-        if BigInt::from_u8(1) == *modulus {
-            return 0.into();
+        if BigInt::ONE == *modulus {
+            return BigInt::ZERO;
         }
-        let mut result: BigInt<SIZE> = 1.into();
+        let mut result: BigInt<SIZE> = BigInt::ONE;
         let mut base = &self % modulus;
         let mut timer = std::time::Instant::now();
         let mut iter = 0;
-        while exp > BigInt::from_u8(0) {
+        while exp > BigInt::ZERO {
             println!("Took: {:?} for {}", timer.elapsed(), iter);
             timer = std::time::Instant::now();
             iter += 1;
@@ -468,13 +473,11 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
         }
         res
     }
-
-    fn to_string_decimal(&self) {}
 }
 
 impl<const SIZE: usize> Display for BigInt<{ SIZE }> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+        f.write_str(&self.to_hex_string())
     }
 }
 
