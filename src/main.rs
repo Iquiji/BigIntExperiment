@@ -1,44 +1,42 @@
 use rand;
-use std::cmp::Ordering;
 use std::fmt::Debug;
-use std::ops::{AddAssign, Mul, Shl, Sub, Div, Rem};
-use std::{fmt::Display, ops::Add};
 use std::fmt::Write;
+use std::ops::{AddAssign, Div, Mul, Rem, Shl, Sub};
+use std::{cmp::Ordering, ops::SubAssign};
+use std::{fmt::Display, ops::Add};
 
 fn main() {
     println!("Hello, world!");
-    
+
     // RSA
-    const SIZE: usize = (64) / 8;
-    let rsa_n_str = "23 "; //"bad47a84c1782e4dbdd913f2a261fc8b65838412c6e45a2068ed6d7f16e9cdf4462b39119563cafb74b9cbf25cfd544bdae23bff0ebe7f6441042b7e109b9a8afaa056821ef8efaab219d21d6763484785622d918d395a2a31f2ece8385a8131e5ff143314a82e21afd713bae817cc0ee3514d4839007ccb55d68409c97a18ab62fa6f9f89b3f94a2777c47d6136775a56a9a0127f682470bef831fbec4bcd7b5095a7823fd70745d37d1bf72b63c4b1b4a3d0581e74bf9ade93cc46148617553931a79d92e9e488ef47223ee6f6c061884b13c9065b591139de13c1ea2927491ed00fb793cd68f463f5f64baa53916b46c818ab99706557a1c2d50d232577d1";
+    const SIZE: usize = (4096) / 8;
+    let rsa_n_str = "bad47a84c1782e4dbdd913f2a261fc8b65838412c6e45a2068ed6d7f16e9cdf4462b39119563cafb74b9cbf25cfd544bdae23bff0ebe7f6441042b7e109b9a8afaa056821ef8efaab219d21d6763484785622d918d395a2a31f2ece8385a8131e5ff143314a82e21afd713bae817cc0ee3514d4839007ccb55d68409c97a18ab62fa6f9f89b3f94a2777c47d6136775a56a9a0127f682470bef831fbec4bcd7b5095a7823fd70745d37d1bf72b63c4b1b4a3d0581e74bf9ade93cc46148617553931a79d92e9e488ef47223ee6f6c061884b13c9065b591139de13c1ea2927491ed00fb793cd68f463f5f64baa53916b46c818ab99706557a1c2d50d232577d1";
     let rsa_n = BigInt::<SIZE>::from_hex_string(rsa_n_str);
-    println!("rsa_n: {:?}",rsa_n);
+    println!("rsa_n: {:?}", rsa_n);
     let outstring = rsa_n.to_hex_string();
     // assert_eq!(rsa_n_str, outstring.to_lowercase());
 
-    let rsa_d_str = "1D"; //"40d60f24b61d76783d3bb1dc00b55f96a2a686f59b3750fdb15c40251c370c65cada222673811bc6b305ed7c90ffcb3abdddc8336612ff13b42a75cb7c88fb936291b523d80acce5a0842c724ed85a1393faf3d470bda8083fa84dc5f31499844f0c7c1e93fb1f734a5a29fb31a35c8a0822455f1c850a49e8629714ec6a2657efe75ec1ca6e62f9a3756c9b20b4855bdc9a3ab58c43d8af85b837a7fd15aa1149c119cfe960c05a9d4cea69c9fb6a897145674882bf57241d77c054dc4c94e8349d376296137eb421686159cb878d15d171eda8692834afc871988f203fc822c5dcee7f6c48df663ea3dc755e7dc06aebd41d05f1ca2891e2679783244d068f";
+    let rsa_d_str = "40d60f24b61d76783d3bb1dc00b55f96a2a686f59b3750fdb15c40251c370c65cada222673811bc6b305ed7c90ffcb3abdddc8336612ff13b42a75cb7c88fb936291b523d80acce5a0842c724ed85a1393faf3d470bda8083fa84dc5f31499844f0c7c1e93fb1f734a5a29fb31a35c8a0822455f1c850a49e8629714ec6a2657efe75ec1ca6e62f9a3756c9b20b4855bdc9a3ab58c43d8af85b837a7fd15aa1149c119cfe960c05a9d4cea69c9fb6a897145674882bf57241d77c054dc4c94e8349d376296137eb421686159cb878d15d171eda8692834afc871988f203fc822c5dcee7f6c48df663ea3dc755e7dc06aebd41d05f1ca2891e2679783244d068f";
     let rsa_d = BigInt::<SIZE>::from_hex_string(rsa_d_str);
-    println!("rsa_d: {:?}",rsa_d);
+    println!("rsa_d: {:?}", rsa_d);
     let outstring = rsa_d.to_hex_string();
     // assert_eq!(rsa_d_str, outstring.to_lowercase());
 
-    let rsa_e_str = "05"; //"00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010001";
+    let rsa_e_str = "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010001";
     let rsa_e = BigInt::<SIZE>::from_hex_string(rsa_e_str);
-    println!("rsa_e: {:?}",rsa_e);
+    println!("rsa_e: {:?}", rsa_e);
     let outstring = rsa_e.to_hex_string();
     // assert_eq!(rsa_e_str, outstring.to_lowercase());
 
     let message = BigInt::<SIZE>::from_hex_string("0C");
-    println!("message = {:?}",message);
-    let encrypted = message.mod_pow(rsa_e, rsa_n);
-    println!("mod_pow (c) = {:?}",encrypted);
-    
-    let decrypted = encrypted.mod_pow(rsa_d, rsa_n);
-    println!("decrypted = {:?}",decrypted);
+    println!("message = {:?}", message);
+    let encrypted = message.clone().mod_pow(&rsa_e, &rsa_n);
+    println!("mod_pow (c) = {:?}", encrypted);
+
+    let decrypted = encrypted.mod_pow(&rsa_d, &rsa_n);
+    println!("decrypted = {:?}", decrypted);
 
     assert_eq!(message, decrypted);
-
-
 
     // let number = BigInt::<4>::from_hex_string("01FEFE01");
     // assert_eq!(number.to_hex_string(),"01FEFE01");
@@ -77,37 +75,37 @@ fn main() {
     // println!("Debug: {:?}", number3);
 }
 
-struct RSA<const SIZE: usize>{
-    p: BigInt::<SIZE>,
-    q: BigInt::<SIZE>,
-    n: BigInt::<SIZE>,
-    e: BigInt::<SIZE>,
-    d: BigInt::<SIZE>,
-}
-impl<const SIZE: usize> RSA<{ SIZE }>{
-    fn generate() -> Self{
-        unimplemented!()
-    }
-    fn from_n_d_e() -> Self{
-        unimplemented!()
-    }
-    fn get_public_key(&self) -> (BigInt::<SIZE>,BigInt::<SIZE>){
-        (self.e, self.n)
-    }
-    fn get_private_key(&self) -> (BigInt::<SIZE>,BigInt::<SIZE>){
-        (self.d, self.n)
-    }
-    fn encrypt(&self, data: BigInt::<SIZE>) -> BigInt::<SIZE>{
-        unimplemented!()
-    }
-    fn decrypt(&self, data: BigInt::<SIZE>) -> BigInt::<SIZE>{
-        unimplemented!()
-    }
-}
+// struct RSA<const SIZE: usize> {
+//     p: BigInt<SIZE>,
+//     q: BigInt<SIZE>,
+//     n: BigInt<SIZE>,
+//     e: BigInt<SIZE>,
+//     d: BigInt<SIZE>,
+// }
+// impl<const SIZE: usize> RSA<{ SIZE }> {
+//     fn generate() -> Self {
+//         unimplemented!()
+//     }
+//     fn from_n_d_e() -> Self {
+//         unimplemented!()
+//     }
+//     fn get_public_key(&self) -> (BigInt<SIZE>, BigInt<SIZE>) {
+//         (self.e, self.n)
+//     }
+//     fn get_private_key(&self) -> (BigInt<SIZE>, BigInt<SIZE>) {
+//         (self.d, self.n)
+//     }
+//     fn encrypt(&self, data: BigInt<SIZE>) -> BigInt<SIZE> {
+//         unimplemented!()
+//     }
+//     fn decrypt(&self, data: BigInt<SIZE>) -> BigInt<SIZE> {
+//         unimplemented!()
+//     }
+// }
 
-const ELEMENT_BIT_SIZE: usize = 8;
+// const ELEMENT_BIT_SIZE: usize = 8;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 struct BigInt<const SIZE: usize> {
     data: [u8; SIZE],
 }
@@ -148,79 +146,85 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
     }
 }
 
-impl<const SIZE: usize> Add for BigInt<{ SIZE }> {
-    type Output = BigInt<SIZE>;
-
-    fn add(self, rhs: Self) -> Self::Output {
+impl<const SIZE: usize> AddAssign<&Self> for BigInt<{ SIZE }> {
+    fn add_assign(&mut self, rhs: &Self) {
         let mut carry_flag = false;
-        let mut output = BigInt::<SIZE>::new();
 
         for idx in 0..SIZE {
             // println!("carry flag: {}", carry_flag);
             let step = self.data[idx].checked_add(rhs.data[idx]);
             if let Some(step) = step {
-                output.data[idx] =
-                    if let Some(step_inner) = step.checked_add(if carry_flag { 1 } else { 0 }) {
-                        carry_flag = false;
-                        step_inner
-                    } else {
-                        carry_flag = true;
-                        step.wrapping_add(1)
-                    };
+                self.data[idx] = if let Some(step_inner) = step.checked_add(u8::from(carry_flag)) {
+                    carry_flag = false;
+                    step_inner
+                } else {
+                    carry_flag = true;
+                    step.wrapping_add(1)
+                };
             } else {
                 // println!("overflow in add");
-                output.data[idx] =
-                    self.data[idx].wrapping_add(rhs.data[idx]) + if carry_flag { 1 } else { 0 };
+                self.data[idx] = self.data[idx].wrapping_add(rhs.data[idx]) + u8::from(carry_flag);
 
                 carry_flag = true;
             }
         }
 
         // eprintln!("carry at end of add: {}", carry_flag);
-        if carry_flag{
+        if carry_flag {
             println!("overflow in add!");
         }
-
-        output
     }
 }
 
-impl<const SIZE: usize> Sub for BigInt<{ SIZE }> {
-    type Output = BigInt<SIZE>;
+impl<const SIZE: usize> Add for &BigInt<{ SIZE }> {
+    type Output = BigInt<{ SIZE }>;
 
-    fn sub(self, rhs: Self) -> Self::Output {
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut result = self.clone();
+        result += rhs;
+        result
+    }
+}
+
+impl<const SIZE: usize> SubAssign<&Self> for BigInt<{ SIZE }> {
+    fn sub_assign(&mut self, rhs: &Self) {
         let mut carry_flag = false;
-        let mut output = BigInt::<SIZE>::new();
 
         for idx in 0..SIZE {
             // println!("carry flag: {}", carry_flag);
             let step = self.data[idx].checked_sub(rhs.data[idx]);
             // println!("{} - {} = {:?}", self.data[idx], rhs.data[idx], step);
             if let Some(step) = step {
-                output.data[idx] =
-                    if let Some(step_inner) = step.checked_sub(if carry_flag { 1 } else { 0 }) {
-                        carry_flag = false;
-                        step_inner
-                    } else {
-                        carry_flag = true;
-                        step.wrapping_sub(1)
-                    };
+                self.data[idx] = if let Some(step_inner) = step.checked_sub(u8::from(carry_flag)) {
+                    carry_flag = false;
+                    step_inner
+                } else {
+                    carry_flag = true;
+                    step.wrapping_sub(1)
+                };
             } else {
                 // println!("underflow in sub");
-                output.data[idx] =
-                    self.data[idx].wrapping_sub(rhs.data[idx]) - if carry_flag { 1 } else { 0 };
+                self.data[idx] = self.data[idx].wrapping_sub(rhs.data[idx]) - u8::from(carry_flag);
 
                 carry_flag = true;
             }
         }
 
         // eprintln!("carry at end of sub: {}", carry_flag);
-
-        output
     }
 }
 
-impl<const SIZE: usize> Mul for BigInt<{ SIZE }> {
+impl<const SIZE: usize> Sub for &BigInt<{ SIZE }> {
+    type Output = BigInt<{ SIZE }>;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let mut result = self.clone();
+        result -= rhs;
+        result
+    }
+}
+
+impl<const SIZE: usize> Mul for &BigInt<{ SIZE }> {
     type Output = BigInt<SIZE>;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -232,7 +236,7 @@ impl<const SIZE: usize> Mul for BigInt<{ SIZE }> {
                 if (self.data[idx] & (1 << bit_idx)) != 0 {
                     let shift_amount = idx * 8 + bit_idx;
                     // println!("shift_amount : {}",shift_amount);
-                    output = output + rhs.shl(shift_amount);
+                    output += &rhs.shl(shift_amount);
                 }
             }
         }
@@ -249,11 +253,11 @@ impl<const SIZE: usize> Mul for BigInt<{ SIZE }> {
     }
 }
 
-impl<const SIZE: usize> Div for BigInt<{ SIZE }>{
+impl<const SIZE: usize> Div for BigInt<{ SIZE }> {
     type Output = BigInt<SIZE>;
 
     fn div(self, rhs: Self) -> Self::Output {
-        if rhs == BigInt::from_u8(0){
+        if rhs == BigInt::from_u8(0) {
             panic!("Divide by Zero!");
         }
         let mut quotient = BigInt::new();
@@ -266,9 +270,9 @@ impl<const SIZE: usize> Div for BigInt<{ SIZE }>{
                 // let bit_at = idx * 8 + bit_idx;
                 // println!("bit: {}", idx * 8 + bit_idx);
                 // if bit is set
-                if remainder >= rhs  {
-                    remainder = remainder - rhs;
-                    quotient.data[idx]  |= 1 << bit_idx;
+                if remainder >= rhs {
+                    remainder -= &rhs;
+                    quotient.data[idx] |= 1 << bit_idx;
                     // println!("shift_amount : {}",shift_amount);
                     // sum_elements.push(rhs.shl(shift_amount));
                 }
@@ -278,11 +282,11 @@ impl<const SIZE: usize> Div for BigInt<{ SIZE }>{
     }
 }
 
-impl<const SIZE: usize> Rem for BigInt<{ SIZE }>{
+impl<const SIZE: usize> Rem for &BigInt<{ SIZE }> {
     type Output = BigInt<SIZE>;
 
     fn rem(self, rhs: Self) -> Self::Output {
-        if rhs == BigInt::from_u8(0){
+        if *rhs == BigInt::from_u8(0) {
             panic!("Modulo by Zero!");
         }
         let mut quotient: BigInt<SIZE> = BigInt::new();
@@ -295,9 +299,9 @@ impl<const SIZE: usize> Rem for BigInt<{ SIZE }>{
                 // let bit_at = idx * 8 + bit_idx;
                 // println!("bit: {}", idx * 8 + bit_idx);
                 // if bit is set
-                if remainder >= rhs  {
-                    remainder = remainder - rhs;
-                    quotient.data[idx]  |= 1 << bit_idx;
+                if remainder >= *rhs {
+                    remainder -= &rhs;
+                    quotient.data[idx] |= 1 << bit_idx;
                     // println!("shift_amount : {}",shift_amount);
                     // sum_elements.push(rhs.shl(shift_amount));
                 }
@@ -361,7 +365,7 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
         let mut output = [0; SIZE];
         let mut carry = false;
         for idx in 0..SIZE {
-            output[idx] = (self.data[idx] << 1) + if carry { 1 } else { 0 };
+            output[idx] = (self.data[idx] << 1) + u8::from(carry);
             // overflow
             if (self.data[idx] << 1) < self.data[idx] {
                 carry = true;
@@ -373,8 +377,8 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
         BigInt { data: output }
     }
 
-    fn shl(self, amount: usize) -> Self {
-        let mut output = self;
+    fn shl(&self, amount: usize) -> Self {
+        let mut output = self.clone();
         for _ in 0..amount {
             output = output.shl_once();
         }
@@ -406,11 +410,11 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
     }
 }
 
-impl<const SIZE: usize> From<u8> for BigInt<{ SIZE }>{
+impl<const SIZE: usize> From<u8> for BigInt<{ SIZE }> {
     fn from(num: u8) -> Self {
         Self::from_u8(num)
     }
-}   
+}
 /*
 https://rob.co.bb/posts/2019-02-10-modular-exponentiation-in-rust/
 
@@ -429,44 +433,43 @@ fn mod_pow(mut base: u64, mut exp: u64, modulus: u64) -> u64 {
 }
 
 */
-impl<const SIZE: usize> BigInt<{ SIZE }>{
-    fn mod_pow(self, exp: Self, modulus: Self) -> Self{
-        let mut exp = exp;
-        if modulus == BigInt::from_u8(1) { return 0.into() }
+impl<const SIZE: usize> BigInt<{ SIZE }> {
+    fn mod_pow(self, exp: &Self, modulus: &Self) -> Self {
+        let mut exp = exp.clone();
+        if BigInt::from_u8(1) == *modulus {
+            return 0.into();
+        }
         let mut result: BigInt<SIZE> = 1.into();
-        let mut base = self % modulus;
+        let mut base = &self % modulus;
         let mut timer = std::time::Instant::now();
         let mut iter = 0;
         while exp > BigInt::from_u8(0) {
-            println!("Took: {:?} for {}",timer.elapsed(),iter);
+            println!("Took: {:?} for {}", timer.elapsed(), iter);
             timer = std::time::Instant::now();
             iter += 1;
             // println!("exp: {:?}",exp);
             // println!("res: {:?}",result);
-            if exp % BigInt::from_u8(2) == 1.into() {
-                result = (result * base) % modulus;
+            if (exp.data[0] & 1) == 1 {
+                result = &(&result * &base) % modulus;
             }
-            base = (base * base) % modulus;
+            base = &(&base * &base) % modulus;
             exp = exp.shr_once();
         }
         result
     }
-
 }
 
-impl<const SIZE: usize> BigInt<{ SIZE }>{
-    fn to_hex_string(self) -> String{
+impl<const SIZE: usize> BigInt<{ SIZE }> {
+    fn to_hex_string(&self) -> String {
         let mut res = String::new();
-        for idx in (0..SIZE).rev(){
-            write!(res,"{:02X?}",self.data[idx]).unwrap();
+        for idx in (0..SIZE).rev() {
+            write!(res, "{:02X?}", self.data[idx]).unwrap();
             // println!("{}",res);
         }
         res
     }
 
-    fn to_string_decimal(&self){
-
-    }
+    fn to_string_decimal(&self) {}
 }
 
 impl<const SIZE: usize> Display for BigInt<{ SIZE }> {
@@ -483,6 +486,14 @@ impl<const SIZE: usize> Debug for BigInt<{ SIZE }> {
     }
 }
 
+impl From<u32> for BigInt<4> {
+    fn from(number: u32) -> Self {
+        let mut bytes = number.to_be_bytes();
+        bytes.reverse();
+        BigInt { data: bytes }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use std::ops::Shl;
@@ -492,27 +503,23 @@ mod test {
         use crate::BigInt;
 
         let cases = [(1u32, 1u32), (0, 0), (u32::MAX, 1), (10000, 1234)];
-        for case in cases {
-            let mut number1_bytes = case.0.to_be_bytes();
-            number1_bytes.reverse();
-            let number1 = BigInt {
-                data: number1_bytes,
-            };
+        for (a, b) in cases {
+            let number1 = BigInt::from(a);
             println!("number1 : {:?}", number1);
 
-            let mut number2_bytes = case.1.to_be_bytes();
+            let mut number2_bytes = b.to_be_bytes();
             number2_bytes.reverse();
             let number2 = BigInt {
                 data: number2_bytes,
             };
             println!("number2 : {:?}", number2);
 
-            let mut res = number1 - number2;
+            let mut res = &number1 - &number2;
             println!("res : {:?}", res);
             // this is because u32 spit want bytes weird
             res.data.reverse();
             let res_u32 = u32::from_be_bytes(res.data);
-            assert_eq!(res_u32, case.0 - case.1);
+            assert_eq!(res_u32, a - b);
         }
     }
 
@@ -560,7 +567,7 @@ mod test {
             };
             println!("number2 : {:?}", number2);
 
-            let mut res = number1 - number2;
+            let mut res = &number1 - &number2;
             println!("res : {:?}", res);
             // this is because u32 spit want bytes weird
             res.data.reverse();
@@ -616,7 +623,7 @@ mod test {
             };
             println!("number2 : {:?}", number2);
 
-            let mut res = number1 * number2;
+            let mut res = &number1 * &number2;
             println!("res       : {:?}", res);
             // this is because u32 spit want bytes weird
             res.data.reverse();
@@ -703,7 +710,7 @@ mod test {
             };
             println!("number2 : {:?}", number2);
 
-            let mut res = number1 % number2;
+            let mut res = &number1 % &number2;
             println!("res       : {:?}", res);
             // this is because u32 spit want bytes weird
             res.data.reverse();
