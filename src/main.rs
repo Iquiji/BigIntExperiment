@@ -324,9 +324,9 @@ pub fn karatsuba<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>, split_at
     // println!("high: {:?}",high1);
     // println!("low : {:?}",low1);
     let (high2, low2) = b.split(split_point);
-    if split_at == 3{
-        panic!();
-    }
+    // if split_at == 3{
+    //     panic!();
+    // }
 
     let z0 = karatsuba(&low1, &low2, split_point);
     // if split_at == SIZE{
@@ -336,8 +336,8 @@ pub fn karatsuba<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>, split_at
     let z2 = karatsuba(&high1, &high2, split_point);
 
 
-    let res_1 = schoolbook(&z2, &BigInt::TWO_FIVE_SIX.shl(split_point * 2 * 8));
-    let res_2 =schoolbook(&(&(&z1 - &z2) - &z0), &BigInt::TWO_FIVE_SIX.shl(split_point * 8));
+    let res_1 = z2.shl(2 * 8 * split_point);
+    let res_2 = (&(&z1 - &z2) - &z0).shl(split_point * 8);
 
     &(&res_1 + &res_2) + &z0
 }
