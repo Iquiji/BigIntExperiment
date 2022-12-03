@@ -167,9 +167,9 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
                 high.data[idx - at] = self.data[idx];
             }
         }
-        println!("before: {:?}",self);
-        println!("high: {:?}",high);
-        println!("low: {:?}",low);
+        // println!("before: {:?}",self);
+        // println!("high: {:?}",high);
+        // println!("low: {:?}",low);
         (high, low)
     }
 
@@ -310,28 +310,18 @@ pub fn schoolbook<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>) -> BigI
 
 pub fn karatsuba<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>, split_at: usize) -> BigInt<SIZE> {
     if a <= &BigInt::from(255) || b <= &BigInt::from(255) {
-        println!("a or b < 256!");
+        // println!("a or b < 256!");
         return schoolbook(a, b);
     }
     
     let size = min(a.size(), b.size());
-    println!("self {:?}, counted size: {} ",a,a.size());
+    // println!("self {:?}, counted size: {} ",a,a.size());
     let split_point = size / 2;
-    println!("\nsplit_point: {}", split_point);
+    // println!("\nsplit_point: {}", split_point);
     let (high1, low1) = a.split(split_point);
-
-    // println!("before split: {:?}",a);
-    // println!("high: {:?}",high1);
-    // println!("low : {:?}",low1);
     let (high2, low2) = b.split(split_point);
-    // if split_at == 3{
-    //     panic!();
-    // }
 
     let z0 = karatsuba(&low1, &low2, split_point);
-    // if split_at == SIZE{
-    //     panic!();
-    // }
     let z1 = karatsuba(&(&low1 + &high1), &(&low2 + &high2), split_point);
     let z2 = karatsuba(&high1, &high2, split_point);
 
@@ -694,7 +684,7 @@ mod test {
         use crate::rand;
         use crate::BigInt;
 
-        for _ in 0..400 {
+        for _ in 0..40000 {
             let case = (rand::random::<u32>() as u64, rand::random::<u32>() as u64);
             let mut number1_bytes = case.0.to_be_bytes();
             number1_bytes.reverse();
