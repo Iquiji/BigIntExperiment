@@ -1,5 +1,7 @@
+#![feature(generic_const_exprs)]
 use const_fn_assert::{cfn_assert, cfn_assert_eq};
 use rand;
+use std::cmp::min;
 use std::fmt::Debug;
 use std::fmt::Write;
 use std::ops::{AddAssign, Div, Mul, Rem, Shl, Sub};
@@ -106,6 +108,14 @@ fn main() {
 
 // const ELEMENT_BIT_SIZE: usize = 8;
 
+pub struct Evaluatable<const N: usize>;
+pub struct Assert<const COND: bool> {}
+pub trait IsTrue {}
+impl IsTrue for Assert<true> {}
+pub const fn is_power_of_two(n: usize) -> bool {
+    n != 0 && n & (n - 1) == 0
+}
+
 #[derive(Clone, PartialEq, Eq)]
 pub struct BigInt<const SIZE: usize> {
     data: [u8; SIZE],
@@ -152,15 +162,29 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
         BigInt { data }
     }
 
-    fn split<const HALF: usize>(&self) -> (BigInt<HALF>, BigInt<HALF>) {
-        cfn_assert_eq!(HALF, SIZE / 2);
-        let mut high = BigInt::<HALF> { data: [0; HALF] };
-        let mut low = BigInt::<HALF> { data: [0; HALF] };
-        for idx in 0..HALF {
+    fn split(&self) -> (BigInt<{ SIZE / 2 }>, BigInt<{ SIZE / 2 }>) {
+        // cfn_assert_eq!(HALF, SIZE / 2);
+        println!("HALF: {}", SIZE / 2);
+        let mut high = BigInt {
+            data: [0; SIZE / 2],
+        };
+        let mut low = BigInt {
+            data: [0; SIZE / 2],
+        };
+        for idx in 0..(SIZE / 2) {
+            println!("idx");
             low.data[idx] = self.data[idx];
-            high.data[idx] = self.data[idx + HALF];
+            high.data[idx] = self.data[idx + SIZE / 2];
         }
         (high, low)
+    }
+
+    fn resize<const NEW_SIZE: usize>(&self) -> BigInt<NEW_SIZE> {
+        let mut new = BigInt::<NEW_SIZE>::new();
+        for idx in 0..min(SIZE, NEW_SIZE) {
+            new.data[idx] = self.data[idx];
+        }
+        new
     }
 
     const fn two_five_six() -> BigInt<SIZE> {
@@ -252,7 +276,10 @@ impl<const SIZE: usize> Sub for &BigInt<{ SIZE }> {
     }
 }
 
-impl<const SIZE: usize> Mul for &BigInt<{ SIZE }> {
+impl<const SIZE: usize> Mul for &BigInt<{ SIZE }>
+where
+    BigInt<{ SIZE / 2 }>: Sized,
+{
     type Output = BigInt<SIZE>;
 
     fn mul(self, rhs: Self) -> Self::Output {
@@ -289,18 +316,25 @@ pub fn schoolbook<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>) -> BigI
     output
 }
 
-pub fn karatsuba<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>) -> BigInt<SIZE> {
+pub fn karatsuba<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>) -> BigInt<SIZE>
+where
+    Evaluatable<{ SIZE / 2 }>: Sized,
+    // [(); SIZE / 2]: Sized
+    // Assert<{ is_power_of_two(SIZE) }>: IsTrue,
+{
+    cfn_assert!(SIZE > 0); // "SIZE is not allowed to be zero"
+    assert!(SIZE > 0);
     if a <= &BigInt::from(255) || b <= &BigInt::from(255) {
         return schoolbook(a, b);
     }
 
-    let split_point = SIZE / 2;
+    let split_point: usize = SIZE / 2;
     let (high1, low1) = a.split();
     let (high2, low2) = b.split();
 
-    let z0 = karatsuba(&low1, &low2);
-    let z1 = karatsuba(&(&low1 + &high1), &(&low2 + &high2));
-    let z2 = karatsuba(&high1, &high2);
+    let z0= karatsuba::<{ SIZE }>(&low1.resize(), &low2.resize());
+    let z1 = karatsuba::<{ SIZE  }>(&(&low1.resize() + &high1.resize()), &(&low2.resize() + &high2.resize()));
+    let z2 = karatsuba::<{ SIZE }>(&high1.resize(), &high2.resize());
 
     &(&(&z2 * &BigInt::TWO_FIVE_SIX.shl(split_point * 2 * 8))
         + &(&(&(&z1 - &z2) - &z0) * &BigInt::TWO_FIVE_SIX.shl(split_point * 8)))
@@ -487,7 +521,10 @@ fn mod_pow(mut base: u64, mut exp: u64, modulus: u64) -> u64 {
 }
 
 */
-impl<const SIZE: usize> BigInt<{ SIZE }> {
+impl<const SIZE: usize> BigInt<{ SIZE }>
+where
+    Evaluatable<{ SIZE / 2 }>: Sized,
+{
     fn mod_pow(self, exp: &Self, modulus: &Self) -> Self {
         let mut exp = exp.clone();
         if BigInt::ONE == *modulus {
