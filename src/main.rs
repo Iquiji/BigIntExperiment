@@ -1,5 +1,6 @@
 use const_fn_assert::{cfn_assert, cfn_assert_eq};
 use rand;
+use std::cmp::min;
 use std::fmt::Debug;
 use std::fmt::Write;
 use std::ops::{AddAssign, Div, Mul, Rem, Shl, Sub};
@@ -152,14 +153,23 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
         BigInt { data }
     }
 
-    fn split<const HALF: usize>(&self) -> (BigInt<HALF>, BigInt<HALF>) {
-        cfn_assert_eq!(HALF, SIZE / 2);
-        let mut high = BigInt::<HALF> { data: [0; HALF] };
-        let mut low = BigInt::<HALF> { data: [0; HALF] };
-        for idx in 0..HALF {
-            low.data[idx] = self.data[idx];
-            high.data[idx] = self.data[idx + HALF];
+    fn split(&self, at: usize) -> (BigInt<SIZE>, BigInt<SIZE>) {
+        // println!("SIZE, {}",SIZE);
+        // let half = SIZE / 2;
+        // println!("HALF, {}",half);
+        // cfn_assert_eq!(HALF, SIZE / 2);
+        let mut high = BigInt::<SIZE> { data: [0; SIZE] };
+        let mut low = BigInt::<SIZE> { data: [0; SIZE] };
+        for idx in 0..SIZE {
+            if idx < at {
+                low.data[idx] = self.data[idx];
+            } else {
+                high.data[idx - at] = self.data[idx];
+            }
         }
+        println!("before: {:?}",self);
+        println!("high: {:?}",high);
+        println!("low: {:?}",low);
         (high, low)
     }
 
@@ -168,6 +178,15 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
         let mut result = BigInt::ZERO;
         result.data[1] = 1;
         result
+    }
+
+    fn size(&self) -> usize{
+        for idx in (0..SIZE).rev(){
+            if self.data[idx] != 0{
+                return idx + 1;
+            }
+        }
+        1
     }
 }
 
@@ -257,7 +276,7 @@ impl<const SIZE: usize> Mul for &BigInt<{ SIZE }> {
 
     fn mul(self, rhs: Self) -> Self::Output {
         if cfg!(feature = "karatsuba") {
-            karatsuba(self, rhs)
+            karatsuba(self, rhs, SIZE)
         } else {
             schoolbook(self, rhs)
         }
@@ -289,22 +308,38 @@ pub fn schoolbook<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>) -> BigI
     output
 }
 
-pub fn karatsuba<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>) -> BigInt<SIZE> {
+pub fn karatsuba<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>, split_at: usize) -> BigInt<SIZE> {
     if a <= &BigInt::from(255) || b <= &BigInt::from(255) {
+        println!("a or b < 256!");
         return schoolbook(a, b);
     }
+    
+    let size = min(a.size(), b.size());
+    println!("self {:?}, counted size: {} ",a,a.size());
+    let split_point = size / 2;
+    println!("\nsplit_point: {}", split_point);
+    let (high1, low1) = a.split(split_point);
 
-    let split_point = SIZE / 2;
-    let (high1, low1) = a.split();
-    let (high2, low2) = b.split();
+    // println!("before split: {:?}",a);
+    // println!("high: {:?}",high1);
+    // println!("low : {:?}",low1);
+    let (high2, low2) = b.split(split_point);
+    if split_at == 3{
+        panic!();
+    }
 
-    let z0 = karatsuba(&low1, &low2);
-    let z1 = karatsuba(&(&low1 + &high1), &(&low2 + &high2));
-    let z2 = karatsuba(&high1, &high2);
+    let z0 = karatsuba(&low1, &low2, split_point);
+    // if split_at == SIZE{
+    //     panic!();
+    // }
+    let z1 = karatsuba(&(&low1 + &high1), &(&low2 + &high2), split_point);
+    let z2 = karatsuba(&high1, &high2, split_point);
 
-    &(&(&z2 * &BigInt::TWO_FIVE_SIX.shl(split_point * 2 * 8))
-        + &(&(&(&z1 - &z2) - &z0) * &BigInt::TWO_FIVE_SIX.shl(split_point * 8)))
-        + &z0
+
+    let res_1 = schoolbook(&z2, &BigInt::TWO_FIVE_SIX.shl(split_point * 2 * 8));
+    let res_2 =schoolbook(&(&(&z1 - &z2) - &z0), &BigInt::TWO_FIVE_SIX.shl(split_point * 8));
+
+    &(&res_1 + &res_2) + &z0
 }
 
 impl<const SIZE: usize> Div for BigInt<{ SIZE }> {
@@ -686,13 +721,15 @@ mod test {
             let should_be = BigInt { data: should_be };
             println!("should_be : {:?}", should_be);
 
-            // let diff = should_be - number1 * number2;
-            // println!("diff : {:?}", diff);
-            // for shift_amount in 0..64 {
-            //     if number2.shl(shift_amount) == diff {
-            //         println!("Eureka!");
-            //     }
-            // }
+            res.data.reverse();
+            let diff = &should_be - &(res);
+            println!("diff : {:?}", diff);
+            for shift_amount in 0..64 {
+                if number2.shl(shift_amount) == diff {
+                    println!("Eureka!");
+                }
+            }
+
 
             assert_eq!(res_u32, case.0 * case.1);
         }
@@ -728,14 +765,6 @@ mod test {
             should_be.reverse();
             let should_be = BigInt { data: should_be };
             println!("should_be : {:?}", should_be);
-
-            // let diff = should_be - number1 * number2;
-            // println!("diff : {:?}", diff);
-            // for shift_amount in 0..64 {
-            //     if number2.shl(shift_amount) == diff {
-            //         println!("Eureka!");
-            //     }
-            // }
 
             assert_eq!(res_u32, case.0 / case.1);
         }
