@@ -1,10 +1,9 @@
-use const_fn_assert::{cfn_assert, cfn_assert_eq};
-use rand;
-use std::cmp::max;
+use const_fn_assert::cfn_assert;
 use std::cmp::min;
 use std::fmt::Debug;
 use std::fmt::Write;
-use std::ops::{AddAssign, Div, Mul, Rem, Shl, Sub};
+use std::ops::{AddAssign, Div, Mul, Rem, Sub};
+use std::{cmp::max, ops::Shr};
 use std::{cmp::Ordering, ops::SubAssign};
 use std::{fmt::Display, ops::Add};
 
@@ -12,22 +11,22 @@ fn main() {
     println!("Hello, world!");
 
     // RSA
-    const SIZE: usize =  4096 / 8;
-    let rsa_n_str =  "24_08_D0_2A_04_40_0F";//
+    const SIZE: usize = 4096 / 8;
+    // let rsa_n_str = "24_08_D0_2A_04_40_0F"; //
     let rsa_n_str = "bad47a84c1782e4dbdd913f2a261fc8b65838412c6e45a2068ed6d7f16e9cdf4462b39119563cafb74b9cbf25cfd544bdae23bff0ebe7f6441042b7e109b9a8afaa056821ef8efaab219d21d6763484785622d918d395a2a31f2ece8385a8131e5ff143314a82e21afd713bae817cc0ee3514d4839007ccb55d68409c97a18ab62fa6f9f89b3f94a2777c47d6136775a56a9a0127f682470bef831fbec4bcd7b5095a7823fd70745d37d1bf72b63c4b1b4a3d0581e74bf9ade93cc46148617553931a79d92e9e488ef47223ee6f6c061884b13c9065b591139de13c1ea2927491ed00fb793cd68f463f5f64baa53916b46c818ab99706557a1c2d50d232577d1";
     let rsa_n = BigInt::<SIZE>::from_hex_string(rsa_n_str);
     println!("rsa_n: {:?}", rsa_n);
     // let outstring = rsa_n.to_hex_string();
     // assert_eq!(rsa_n_str, outstring.to_lowercase());
 
-    let rsa_d_str = "1C_D3_D9_B1_9B_D3_4D"; // 
+    // let rsa_d_str = "1C_D3_D9_B1_9B_D3_4D"; //
     let rsa_d_str = "40d60f24b61d76783d3bb1dc00b55f96a2a686f59b3750fdb15c40251c370c65cada222673811bc6b305ed7c90ffcb3abdddc8336612ff13b42a75cb7c88fb936291b523d80acce5a0842c724ed85a1393faf3d470bda8083fa84dc5f31499844f0c7c1e93fb1f734a5a29fb31a35c8a0822455f1c850a49e8629714ec6a2657efe75ec1ca6e62f9a3756c9b20b4855bdc9a3ab58c43d8af85b837a7fd15aa1149c119cfe960c05a9d4cea69c9fb6a897145674882bf57241d77c054dc4c94e8349d376296137eb421686159cb878d15d171eda8692834afc871988f203fc822c5dcee7f6c48df663ea3dc755e7dc06aebd41d05f1ca2891e2679783244d068f";
     let rsa_d = BigInt::<SIZE>::from_hex_string(rsa_d_str);
     println!("rsa_d: {:?}", rsa_d);
     // let outstring = rsa_d.to_hex_string();
     // assert_eq!(rsa_d_str, outstring.to_lowercase());
 
-    let rsa_e_str = "05"; //
+    // let rsa_e_str = "05"; //
     let rsa_e_str = "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010001";
     let rsa_e = BigInt::<SIZE>::from_hex_string(rsa_e_str);
     println!("rsa_e: {:?}", rsa_e);
@@ -39,12 +38,12 @@ fn main() {
 
     // let encrypted_should_be = BigInt::<SIZE>::from_hex_string("1A_9A_27_8D_E9_6C_4B");
 
-    let encrypted = BigInt::mod_pow(&message,&rsa_e, &rsa_n);
+    let encrypted = BigInt::mod_pow(&message, &rsa_e, &rsa_n);
     println!("encrypted = {:?}", encrypted);
 
     // assert_eq!(encrypted_should_be, encrypted);
 
-    let decrypted = BigInt::mod_pow(&encrypted,&rsa_d, &rsa_n);
+    let decrypted = BigInt::mod_pow(&encrypted, &rsa_d, &rsa_n);
     println!("decrypted = {:?}", decrypted);
 
     assert_eq!(message, decrypted);
@@ -118,10 +117,13 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
                 // .chain(vec!['0'].iter().cloned().cycle())
                 .skip(idx * 2)
                 .take(2)
-                .collect::<String>().chars().rev().collect::<String>();
+                .collect::<String>()
+                .chars()
+                .rev()
+                .collect::<String>();
             // println!("hex_4: {hex_4}");
-            if hex_4.is_empty(){
-                continue;;
+            if hex_4.is_empty() {
+                continue;
             }
             let parsed =
                 u8::from_str_radix(&hex_4, 16).expect("Error Parsing Hex String into BigInt");
@@ -158,9 +160,9 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
         result
     }
 
-    fn size(&self) -> usize{
-        for idx in (0..SIZE).rev(){
-            if self.data[idx] != 0{
+    fn size(&self) -> usize {
+        for idx in (0..SIZE).rev() {
+            if self.data[idx] != 0 {
                 return idx + 1;
             }
         }
@@ -254,7 +256,7 @@ impl<const SIZE: usize> Mul for &BigInt<{ SIZE }> {
 
     fn mul(self, rhs: Self) -> Self::Output {
         if cfg!(feature = "karatsuba") {
-            karatsuba(self, rhs, SIZE)
+            karatsuba(self, rhs)
         } else {
             schoolbook(self, rhs)
         }
@@ -286,10 +288,10 @@ pub fn schoolbook<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>) -> BigI
     output
 }
 
-pub fn karatsuba<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>, split_at: usize) -> BigInt<SIZE> {
+pub fn karatsuba<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>) -> BigInt<SIZE> {
     if a <= &BigInt::from(255) || b <= &BigInt::from(255) {
-        let a_min = min(a,b);
-        let b_max = max(a,b);
+        let a_min = min(a, b);
+        let b_max = max(a, b);
         let mut output = BigInt::ZERO;
         for bit_idx in 0..8 {
             // println!("bit: {}", idx * 8 + bit_idx);
@@ -301,7 +303,7 @@ pub fn karatsuba<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>, split_at
         }
         return output;
     }
-    
+
     let size = min(a.size(), b.size());
     // println!("self {:?}, counted size: {} ",a,a.size());
     let split_point = size / 2;
@@ -309,10 +311,9 @@ pub fn karatsuba<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>, split_at
     let (high1, low1) = a.split(split_point);
     let (high2, low2) = b.split(split_point);
 
-    let z0 = karatsuba(&low1, &low2, split_point);
-    let z1 = karatsuba(&(&low1 + &high1), &(&low2 + &high2), split_point);
-    let z2 = karatsuba(&high1, &high2, split_point);
-
+    let z0 = karatsuba(&low1, &low2);
+    let z1 = karatsuba(&(&low1 + &high1), &(&low2 + &high2));
+    let z2 = karatsuba(&high1, &high2);
 
     let res_1 = z2.shl(2 * 8 * split_point);
     let res_2 = (&(&z1 - &z2) - &z0).shl(split_point * 8);
@@ -428,6 +429,7 @@ impl<const SIZE: usize> PartialOrd for BigInt<{ SIZE }> {
 }
 
 impl<const SIZE: usize> BigInt<{ SIZE }> {
+    #[allow(clippy::needless_range_loop)]
     pub fn shl_once(self) -> Self {
         let mut output = [0; SIZE];
         let mut carry = false;
@@ -467,10 +469,14 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
 
         BigInt { data: output }
     }
+}
 
-    pub fn shr(self, amount: usize) -> Self {
+impl<const SIZE: usize> Shr<usize> for BigInt<{ SIZE }> {
+    type Output = BigInt<{ SIZE }>;
+
+    fn shr(self, rhs: usize) -> Self {
         let mut output = self;
-        for _ in 0..amount {
+        for _ in 0..rhs {
             output = output.shr_once();
         }
         output
@@ -501,7 +507,6 @@ fn mod_pow(mut base: u64, mut exp: u64, modulus: u64) -> u64 {
 
 */
 
-
 impl<const SIZE: usize> BigInt<{ SIZE }> {
     fn mod_pow(base: &Self, exp: &Self, modulus: &Self) -> Self {
         let mut exp = exp.clone();
@@ -512,7 +517,7 @@ impl<const SIZE: usize> BigInt<{ SIZE }> {
         let mut base = base % modulus;
         let timer = std::time::Instant::now();
         while exp > BigInt::ZERO {
-            if exp.data[0]  == 0{
+            if exp.data[0] == 0 {
                 println!("{}", result);
             }
             // println!("exp: {:?}",exp);
@@ -592,8 +597,8 @@ mod test {
 
     #[test]
     fn test_64bit_shl_fuzzed() {
-        use crate::rand;
         use crate::BigInt;
+        use rand;
 
         for _ in 0..10000 {
             let case = (rand::random::<u64>(), rand::random::<u8>() as usize / 4);
@@ -615,8 +620,8 @@ mod test {
 
     #[test]
     fn test_64bit_sub_fuzzed() {
-        use crate::rand;
         use crate::BigInt;
+        use rand;
 
         for _ in 0..10000 {
             let case = (rand::random::<u64>(), rand::random::<u64>());
@@ -645,8 +650,8 @@ mod test {
 
     #[test]
     fn test_64bit_cmp_fuzzed() {
-        use crate::rand;
         use crate::BigInt;
+        use rand;
 
         for _ in 0..10000 {
             let case = (rand::random::<u64>(), rand::random::<u64>());
@@ -671,8 +676,8 @@ mod test {
 
     #[test]
     fn test_64bit_mul_fuzzed() {
-        use crate::rand;
         use crate::BigInt;
+        use rand;
 
         for _ in 0..4000 {
             let case = (rand::random::<u32>() as u64, rand::random::<u32>() as u64);
@@ -710,14 +715,13 @@ mod test {
             //     }
             // }
 
-
             assert_eq!(res_u32, case.0 * case.1);
         }
     }
     #[test]
     fn test_64bit_div_fuzzed() {
-        use crate::rand;
         use crate::BigInt;
+        use rand;
 
         for _ in 0..1000 {
             let case = (rand::random::<u64>(), rand::random::<u64>() / 3);
@@ -752,8 +756,8 @@ mod test {
 
     #[test]
     fn test_64bit_mod_fuzzed() {
-        use crate::rand;
         use crate::BigInt;
+        use rand;
 
         for _ in 0..1000 {
             let case = (rand::random::<u64>(), rand::random::<u64>() / 3);
