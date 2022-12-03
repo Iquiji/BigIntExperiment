@@ -310,14 +310,7 @@ pub fn schoolbook<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>) -> BigI
 
 pub fn karatsuba<const SIZE: usize>(a: &BigInt<SIZE>, b: &BigInt<SIZE>, split_at: usize) -> BigInt<SIZE> {
     if a <= &BigInt::from(255) || b <= &BigInt::from(255) {
-        // println!("a or b < 256!");
-        let a = a.data[0] as u16;
-        let b = b.data[0] as u16;
-        let res_int = (a * b).to_be_bytes();
-        let mut res = BigInt::<SIZE>::new();
-        res.data[0] = res_int[1];
-        res.data[1] = res_int[0];
-        return res;
+        return schoolbook(a, b);
     }
     
     let size = min(a.size(), b.size());
@@ -690,7 +683,7 @@ mod test {
         use crate::rand;
         use crate::BigInt;
 
-        for _ in 0..40000 {
+        for _ in 0..4000 {
             let case = (rand::random::<u32>() as u64, rand::random::<u32>() as u64);
             let mut number1_bytes = case.0.to_be_bytes();
             number1_bytes.reverse();
