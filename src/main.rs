@@ -2,14 +2,80 @@ use const_fn_assert::cfn_assert;
 use std::cmp::min;
 use std::fmt::Debug;
 use std::fmt::Write;
+use std::io::stdin;
+use std::io::stdout;
 use std::ops::{AddAssign, Div, Mul, Rem, Sub};
 use std::{cmp::max, ops::Shr};
 use std::{cmp::Ordering, ops::SubAssign};
 use std::{fmt::Display, ops::Add};
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>>{
     println!("Hello, world!");
 
+    let mode = readline("> ")?;
+
+    const SIZE: usize = 64 / 8;
+
+    match mode.as_str(){
+        "encrypt" | "e" => {
+            println!("encrypting");
+            let message = readline("msg: ")?.parse::<u64>()?;
+            let rsa_e = readline("rsa e: ")?.parse::<u64>()?;
+            let rsa_n = readline("rsa n: ")?.parse::<u64>()?;
+
+            let msg = BigInt::<SIZE>::from(message);
+            let rsa_e = BigInt::<SIZE>::from(rsa_e);
+            let rsa_n = BigInt::<SIZE>::from(rsa_n);
+
+            let encrypted = BigInt::mod_pow(&msg, &rsa_e, &rsa_n);
+            println!("encrypted = {:?}", encrypted);
+        
+            let out_decimal = u64::from_str_radix(&encrypted.to_hex_string(), 16)?;
+            println!("encrypted num: '{}'", out_decimal);
+
+        },
+        "decryt" | "d" => {
+            println!("decrypting");
+            let message = readline("msg: ")?.parse::<u64>()?;
+            let rsa_e = readline("rsa d: ")?.parse::<u64>()?;
+            let rsa_n = readline("rsa n: ")?.parse::<u64>()?;
+
+            let msg = BigInt::<SIZE>::from(message);
+            let rsa_e = BigInt::<SIZE>::from(rsa_e);
+            let rsa_n = BigInt::<SIZE>::from(rsa_n);
+
+            let decrypted = BigInt::mod_pow(&msg, &rsa_e, &rsa_n);
+            println!("decrypted = {:?}", decrypted);
+        
+            let out_decimal = u64::from_str_radix(&decrypted.to_hex_string(), 16)?;
+            println!("decrypted num: '{}'", out_decimal);
+
+        },
+        "test" | "t" => {
+            println!("Testing 2048Bit RSA - Takes > 5min");
+            test_2048_bit_rsa();
+        }
+        _ => {
+            println!("Invalid Mode!");
+        }
+    }
+
+
+    Ok(())
+}
+
+fn readline(msg: &str) -> Result<String,Box<dyn std::error::Error>>{
+    use std::io::Write;
+    print!("{}", msg);
+    stdout().lock().flush()?;
+    let mut str = String::new();
+    stdin().read_line(&mut str)?;
+    str = str.strip_suffix('\n').ok_or("err")?.to_string();
+    Ok(str)
+}
+
+
+fn test_2048_bit_rsa() {
     // RSA
     const SIZE: usize = 4096 / 8;
     // let rsa_n_str = "24_08_D0_2A_04_40_0F"; //
@@ -49,36 +115,6 @@ fn main() {
     assert_eq!(message, decrypted);
     println!("success!");
 }
-
-// struct RSA<const SIZE: usize> {
-//     p: BigInt<SIZE>,
-//     q: BigInt<SIZE>,
-//     n: BigInt<SIZE>,
-//     e: BigInt<SIZE>,
-//     d: BigInt<SIZE>,
-// }
-// impl<const SIZE: usize> RSA<{ SIZE }> {
-//     fn generate() -> Self {
-//         unimplemented!()
-//     }
-//     fn from_n_d_e() -> Self {
-//         unimplemented!()
-//     }
-//     fn get_public_key(&self) -> (BigInt<SIZE>, BigInt<SIZE>) {
-//         (self.e, self.n)
-//     }
-//     fn get_private_key(&self) -> (BigInt<SIZE>, BigInt<SIZE>) {
-//         (self.d, self.n)
-//     }
-//     fn encrypt(&self, data: BigInt<SIZE>) -> BigInt<SIZE> {
-//         unimplemented!()
-//     }
-//     fn decrypt(&self, data: BigInt<SIZE>) -> BigInt<SIZE> {
-//         unimplemented!()
-//     }
-// }
-
-// const ELEMENT_BIT_SIZE: usize = 8;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct BigInt<const SIZE: usize> {
@@ -565,6 +601,15 @@ impl From<u32> for BigInt<4> {
         BigInt { data: bytes }
     }
 }
+
+impl From<u64> for BigInt<8> {
+    fn from(number: u64) -> Self {
+        let mut bytes = number.to_be_bytes();
+        bytes.reverse();
+        BigInt { data: bytes }
+    }
+}
+
 
 #[cfg(test)]
 mod test {
